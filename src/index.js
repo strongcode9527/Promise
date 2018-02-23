@@ -1,27 +1,5 @@
 import immediate from 'immediate'
 
-/**
- * 
- * @param {Promise} target 
- * @param {Promise} promise 
- */
-
-function asignPromise(target, promise) {
-  if(promise.state !== 0) {
-    target.fullFilled(promise.value)
-  }else {
-    return {...target, ...promise}
-  }
-}
-
-function QueueItem(Promise, fullFilled, rejected) {
-  return {
-    Promise,
-    rejected,
-    fullFilled,
-  }
-}
-
 function Promise(resolver) {
 
   // 子promise也就是then产生的新的promise。
@@ -73,37 +51,56 @@ function Promise(resolver) {
 
 Promise.prototype.then = function(success, failure) {
   const newPromise = new Promise()
-  this.queue.push(newPromise)
+
   immediate(() => {
     if(this.error) {
       failure(this.error)
     }
-  
-  
-    if(this.state !== 0) {
-      try{
-        const result = success(this.value)
-              
-        
-        // then 执行函数返回的是promise对象
-        if(result instanceof Promise) {
-          asignPromise(newPromise, result)
-        }else {
-          newPromise.fullFilled(result)
-        }
-      }
-      catch(e) {
-        this.error = e
-      }
-    }else {
-      this.queue.push(QueueItem(newPromise, success, failure))
-    }
-
     
-  })
+    }
+  )
 
   return newPromise
 }
+
+function asignPromise(target, promise) {
+  if(promise.state !== 0) {
+    target.fullFilled(promise.value)
+  }else {
+    return {...target, ...promise}
+  }
+}
+
+function QueueItem(Promise, fullFilled, rejected) {
+  return {
+    Promise,
+    rejected,
+    fullFilled,
+  }
+}
+
+function handleThen(promise, success) {
+  try{
+    const result = success(this.value)
+
+    // then 执行函数返回的是promise对象
+    if(result instanceof Promise) {
+      asignPromise(promise, result)
+    }else {
+      promise.fullFilled(result)
+    }
+  }
+  catch(e) {
+    this.error = e
+  }
+  else {
+    this.queue.push(QueueItem(newPromise, success, failure))
+  }
+}
+
+
+
+
 
 Promise.prototype.catch = function() {}
 
