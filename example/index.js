@@ -1,15 +1,13 @@
-import { setTimeout } from 'timers';
-
-var immediate = require('immediate')
+import Promise2 from '../src/index.js'
 
 
-
-immediate(function() {
-  console.log('3')
+new Promise2(function(resolve){
+  console.log('in promise')
+  setTimeout(()=>{
+    resolve('3')
+  }, 3000)
+})
+.then(() => {
+  console.log('in then')
 })
 
-console.log('1') 
-
-setTimeout(() => {
-  console.log('time out')
-})
