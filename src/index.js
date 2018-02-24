@@ -14,22 +14,24 @@ function Promise(resolver) {
   // promise执行过程中产生的错误对象
   this.errror = undefined
 
-
+  // 更改promise状态为1， 并且调用队列中的回调函数。
   this.fullFilled = (result) => {
     this.state = 1
     this.value = result
 
     this.queue.forEach(item => {
-      item.fullFilled(this.value)
+      item.queueFullFilled(this.value)
     })
   }
+
+  // 更改promise的状态为2.
 
   this.rejected = (error) => {
     this.state = 2
     this.error = new Error(error)
   }
 
-  // 执行resolver函数
+  
   try {
     resolver && resolver(this.fullFilled, this.rejected)
   }
@@ -49,16 +51,16 @@ function Promise(resolver) {
  * @param {*} failure 
  */ 
 
-Promise.prototype.then = function(success, failure) {
+Promise.prototype.then = function(success) {
   const newPromise = new Promise()
 
   immediate(() => {
-    if(this.error) {
-      failure(this.error)
+    if(this.state !== 0) {
+      handleThenFulfilled(newPromise, success, this.value)
+    }else {
+      this.queue.push(QueueItem (newPromise, createCallBack(newPromise, success)))
     }
-    
-    }
-  )
+  })
 
   return newPromise
 }
@@ -71,17 +73,25 @@ function asignPromise(target, promise) {
   }
 }
 
-function QueueItem(Promise, fullFilled, rejected) {
+function QueueItem(Promise, queueFullFilled, queueRejected, ) {
   return {
     Promise,
-    rejected,
-    fullFilled,
+    queueRejected,
+    queueFullFilled,
   }
 }
 
-function handleThen(promise, success) {
+// 创建promise队列里面的回调函数
+function createCallBack(promise, success) {
+  return function(value) {
+    handleThenFulfilled(promise, success, value)
+  }
+}
+
+// 去执行then的回调函数。
+function handleThenFulfilled(promise, success, value) {
   try{
-    const result = success(this.value)
+    const result = success(value)
 
     // then 执行函数返回的是promise对象
     if(result instanceof Promise) {
@@ -91,13 +101,9 @@ function handleThen(promise, success) {
     }
   }
   catch(e) {
-    this.error = e
-  }
-  else {
-    this.queue.push(QueueItem(newPromise, success, failure))
+    console.log(e)
   }
 }
-
 
 
 

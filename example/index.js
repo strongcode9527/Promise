@@ -1,13 +1,23 @@
 import Promise2 from '../src/index.js'
 
+console.log('start')
 
-new Promise2(function(resolve){
+var a = new Promise2(function(resolve){
   console.log('in promise')
   setTimeout(()=>{
-    resolve('3')
+    resolve(3)
   }, 3000)
 })
-.then(() => {
-  console.log('in then')
-})
+.then(
+  (res) => new Promise2(function(resolve) {
+    console.log(`${res} s 后`)
+    setTimeout(() => {
+      resolve(res + 5)
+    }, 5000)
+  })
+  .then((res) => {
+    console.log(`${res} 秒 后`)
+  })
+)
 
+console.log(a)
