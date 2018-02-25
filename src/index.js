@@ -16,6 +16,9 @@ function Promise(resolver) {
 
   // 更改promise状态为1， 并且调用队列中的回调函数。
   this.fullFilled = (result) => {
+    if(this.state !== 0) {
+      return
+    }
     this.state = 1
     this.value = result
 
@@ -27,6 +30,9 @@ function Promise(resolver) {
   // 更改promise的状态为2.
 
   this.rejected = (error) => {
+    if(this.state !== 0) {
+      return
+    }
     this.state = 2
     this.error = new Error(error)
   }
@@ -53,15 +59,18 @@ function Promise(resolver) {
 
 Promise.prototype.then = function(success) {
   const newPromise = new Promise()
-
-  immediate(() => {
-    if(this.state !== 0) {
-      handleThenFulfilled(newPromise, success, this.value)
-    }else {
-      this.queue.push(QueueItem (newPromise, createCallBack(newPromise, success)))
-    }
-  })
-
+  if(typeof success !== 'function') {
+    this.queue.push(QueueItem(newPromise, createCallBack(newPromise, function() {}, true)))
+  }
+  else {
+    immediate(() => {
+      if(this.state !== 0) {
+        handleThenFulfilled(newPromise, success, this.value)
+      }else {
+        this.queue.push(QueueItem (newPromise, createCallBack(newPromise, success)))
+      }
+    })
+  }
   return newPromise
 }
 
@@ -82,16 +91,26 @@ function QueueItem(Promise, queueFullFilled, queueRejected, ) {
 }
 
 // 创建promise队列里面的回调函数
-function createCallBack(promise, success) {
+function createCallBack(promise, success, isPenetrate) {
   return function(value) {
-    handleThenFulfilled(promise, success, value)
+    handleThenFulfilled(promise, success, value, isPenetrate)
   }
 }
 
-// 去执行then的回调函数。
-function handleThenFulfilled(promise, success, value) {
+
+
+
+
+/**
+ * 
+ * @param {Promise} promise 
+ * @param {function} success 
+ * @param {*} value 
+ * @param {boolean} isPenetrate  // 判断是否为值穿透then的回调
+ */
+function handleThenFulfilled(promise, success, value, isPenetrate) {
   try{
-    const result = success(value)
+    const result = isPenetrate ? value :  success(value)
 
     // then 执行函数返回的是promise对象
     if(result instanceof Promise) {
@@ -104,6 +123,7 @@ function handleThenFulfilled(promise, success, value) {
     console.log(e)
   }
 }
+
 
 
 
