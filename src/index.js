@@ -42,6 +42,10 @@ function Promise(resolver) {
     resolver && resolver(this.fullFilled, this.rejected)
   }
   catch(e) {
+    // 在resove之后的
+    if(this.state !== 0) {
+      return
+    }
     this.error = e
   }
 }
@@ -57,7 +61,13 @@ function Promise(resolver) {
  * @param {*} failure 
  */ 
 
-Promise.prototype.then = function(success) {
+Promise.prototype.then = function(success, reject) {
+
+
+  if(this.state === 2 && typeof reject === 'function') {
+    reject(this.error)
+  }
+
   const newPromise = new Promise()
   if(typeof success !== 'function') {
     this.queue.push(QueueItem(newPromise, createCallBack(newPromise, function() {}, true)))
