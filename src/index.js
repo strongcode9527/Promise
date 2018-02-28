@@ -33,6 +33,7 @@ function Promise(resolver) {
     if(this.state !== 0) {
       return
     }
+
     this.state = 2
     this.error = new Error(error)
 
@@ -71,15 +72,12 @@ Promise.prototype.then = function(success, reject) {
   const newPromise = new Promise()
   // 当前promise有错误。
   if(this.state === 2) {
-    immediate(() => {
-      typeof reject === 'function' ? handleThenFunc(newPromise, reject, this.error) : newPromise.rejected(this.error)
-      console.log(' in error')
-    }) 
+    typeof reject === 'function' ? immediate(() =>handleThenFunc(newPromise, reject, this.error)) : newPromise.rejected(this.error)
     return newPromise
   }
-  // 处理then的回调值穿透问题
   if(typeof success !== 'function') {
     this.queue.push(QueueItem(newPromise, createCallBack(newPromise, function() {}, true)))
+    return newPromise
   }
   else {
     // 当前promise的状态稳pending，加入会掉即可。

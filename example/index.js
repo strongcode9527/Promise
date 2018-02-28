@@ -5,8 +5,8 @@ let promise = new Promise2((resolve, reject) => {
 })
 
 promise.then(()=>{})
-.then(()=>{}, () => {
-  console.log('in error')
+.then(()=>{}, (e) => {
+  console.log(e)
 })
 
 console.log('end')
