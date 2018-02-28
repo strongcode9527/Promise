@@ -5,9 +5,11 @@ let promise = new Promise2((resolve, reject) => {
 })
 
 promise.then(()=>{})
-.then(()=>{}, (e) => {
-  console.log(e)
+.then(()=>{})
+.catch((e) => {
+  console.log(e) 
 })
+  
 
 console.log('end')
 
