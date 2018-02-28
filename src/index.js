@@ -35,6 +35,11 @@ function Promise(resolver) {
     }
     this.state = 2
     this.error = new Error(error)
+
+    this.queue.forEach(item => {
+      item.queueFullFilled(this.error)
+    })
+
   }
 
   
@@ -63,23 +68,28 @@ function Promise(resolver) {
 
 Promise.prototype.then = function(success, reject) {
 
-
-  if(this.state === 2 && typeof reject === 'function') {
-    reject(this.error)
-  }
-
   const newPromise = new Promise()
+  // 当前promise有错误。
+  if(this.state === 2) {
+    immediate(() => {
+      typeof reject === 'function' ? handleThenFunc(newPromise, reject, this.error) : newPromise.rejected(this.error)
+      console.log(' in error')
+    }) 
+    return newPromise
+  }
+  // 处理then的回调值穿透问题
   if(typeof success !== 'function') {
     this.queue.push(QueueItem(newPromise, createCallBack(newPromise, function() {}, true)))
   }
   else {
-    immediate(() => {
-      if(this.state !== 0) {
-        handleThenFulfilled(newPromise, success, this.value)
-      }else {
-        this.queue.push(QueueItem (newPromise, createCallBack(newPromise, success)))
-      }
-    })
+    // 当前promise的状态稳pending，加入会掉即可。
+    if(this.state === 0) {
+      this.queue.push(QueueItem(newPromise, createCallBack(newPromise, success)))
+    }else {
+      immediate(() => {
+        handleThenFunc(newPromise, success, this.value)
+      })
+    } 
   }
   return newPromise
 }
@@ -100,15 +110,12 @@ function QueueItem(Promise, queueFullFilled, queueRejected, ) {
   }
 }
 
-// 创建promise队列里面的回调函数
+// 创建promise队列里面的回调函数, 改为状态1
 function createCallBack(promise, success, isPenetrate) {
   return function(value) {
-    handleThenFulfilled(promise, success, value, isPenetrate)
+    handleThenFunc(promise, success, value, isPenetrate)
   }
 }
-
-
-
 
 
 /**
@@ -118,9 +125,9 @@ function createCallBack(promise, success, isPenetrate) {
  * @param {*} value 
  * @param {boolean} isPenetrate  // 判断是否为值穿透then的回调
  */
-function handleThenFulfilled(promise, success, value, isPenetrate) {
+function handleThenFunc(promise, callback, value, isPenetrate) {
   try{
-    const result = isPenetrate ? value :  success(value)
+    const result = isPenetrate ? value :  callback(value)
 
     // then 执行函数返回的是promise对象
     if(result instanceof Promise) {
@@ -130,11 +137,9 @@ function handleThenFulfilled(promise, success, value, isPenetrate) {
     }
   }
   catch(e) {
-    console.log(e)
+    promise.rejected(e)
   }
 }
-
-
 
 
 
