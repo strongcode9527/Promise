@@ -138,8 +138,6 @@ function handleThenFunc(promise, callback, value, isPenetrate) {
   }
 }
 
-
-
 Promise.prototype.catch = function(rejected) {
   console.log('in catch   1 ')
   return then.call(this, null, rejected)
@@ -150,8 +148,5 @@ Promise.resolve = function(value) {
   return new Promise().fullFilled(value)
 }
 
-Promise.reject = function() {}
-Promise.all = function() {}
-Promise.race = function() {}
 
 export default Promise
